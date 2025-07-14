@@ -95,12 +95,32 @@ class _FaceDetectionPageState extends State<FaceDetectionPage> {
       }
       final bytes = allBytes.done().buffer.asUint8List();
 
+      // final inputImage = InputImage.fromBytes(
+      //   bytes: bytes,
+      //   metadata: InputImageMetadata(
+      //     size: Size(image.width.toDouble(), image.height.toDouble()),
+      //     rotation: InputImageRotation.rotation270deg,
+      //     format: InputImageFormat.nv21,
+      //     bytesPerRow: image.planes[0].bytesPerRow,
+      //   ),
+      // );
+
+      InputImageRotation rotation =
+          InputImageRotationValue.fromRawValue(
+            cameraController.description.sensorOrientation,
+          ) ??
+          InputImageRotation.rotation0deg;
+
+      InputImageFormat format =
+          InputImageFormatValue.fromRawValue(image.format.raw) ??
+          InputImageFormat.nv21; // fallback if unknown
+
       final inputImage = InputImage.fromBytes(
         bytes: bytes,
         metadata: InputImageMetadata(
           size: Size(image.width.toDouble(), image.height.toDouble()),
-          rotation: InputImageRotation.rotation270deg,
-          format: InputImageFormat.nv21,
+          rotation: rotation,
+          format: format,
           bytesPerRow: image.planes[0].bytesPerRow,
         ),
       );

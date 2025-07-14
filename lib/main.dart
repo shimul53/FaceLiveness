@@ -1,6 +1,10 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+import 'package:image_cropper/image_cropper.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'dart:io';
 
@@ -65,6 +69,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   String? capturedImagePath;
+  File? _imageFile;
+  final ImagePicker _picker = ImagePicker();
 
   @override
   Widget build(BuildContext context) {
@@ -135,9 +141,143 @@ class _HomePageState extends State<HomePage> {
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
               ),
             ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.all(20),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                foregroundColor: Colors.black,
+                backgroundColor: Colors.amberAccent,
+              ),
+              onPressed: () async {
+                _launchCamera().then((Value) {
+                  cropImage(_imageFile!.path).then((croppedFile) {
+                    if (croppedFile != null) {
+                      setState(() {
+                        _readNIDFromImage(_imageFile!);
+                      });
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Crop cancelled')),
+                      );
+                    }
+                  });
+                });
+              },
+              child: const Text(
+                'Verify NID',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+              ),
+            ),
           ],
         ),
       ),
     );
+  }
+
+  //Crop the images for better results
+  Future<File?> cropImage(String filePath) async {
+    final croppedFile = await ImageCropper().cropImage(
+      sourcePath: filePath,
+      aspectRatio: CropAspectRatio(ratioX: 30, ratioY: 30),
+      uiSettings: [
+        AndroidUiSettings(
+          toolbarTitle: 'Crop NID Image',
+          toolbarColor: Colors.deepOrange,
+          toolbarWidgetColor: Colors.white,
+          initAspectRatio: CropAspectRatioPreset.original,
+          lockAspectRatio: false,
+        ),
+        IOSUiSettings(title: 'Crop NID Image'),
+      ],
+    );
+
+    if (croppedFile != null) {
+      return File(croppedFile.path);
+    } else {
+      return null; // User cancelled
+    }
+  }
+
+  //Read NID Info
+  Future<void> _readNIDFromImage(File imageFile) async {
+    try {
+      final InputImage inputImage = InputImage.fromFile(imageFile);
+      final textRecognizer = TextRecognizer(
+        script: TextRecognitionScript.latin,
+      );
+      final RecognizedText recognizedText = await textRecognizer.processImage(
+        inputImage,
+      );
+
+      final String fullText = recognizedText.text;
+      print("OCR TEXT: $fullText");
+
+      String nid = '';
+      String dob = '';
+      String name = '';
+      String error = '';
+
+      try {
+        final RegExp pNid = RegExp(r'([0-9]{3})\s([0-9]{3})\s([0-9]{4})');
+        final RegExp pNid10 = RegExp(r'\b[0-9]{10}\b');
+        final RegExp pNidOld = RegExp(r'\b[0-9]{13}\b');
+        final RegExp pNidOlder = RegExp(r'\b[0-9]{17}\b');
+        final RegExp pDob = RegExp(
+          r'\b([0-9]{2})\s([A-Z][a-z]+)\s([0-9]{4})\b',
+        );
+        final RegExp pName = RegExp(r'(?i)Name:\s*(.+)');
+
+        final matchNid =
+            pNid.firstMatch(fullText) ??
+            pNid10.firstMatch(fullText) ??
+            pNidOld.firstMatch(fullText) ??
+            pNidOlder.firstMatch(fullText);
+
+        if (matchNid != null) {
+          nid = matchNid.group(0)?.replaceAll(' ', '') ?? '';
+        }
+
+        final matchDob = pDob.firstMatch(fullText);
+        if (matchDob != null) {
+          dob = matchDob.group(0)?.replaceAll(' ', '-') ?? '';
+        }
+
+        final matchName = pName.firstMatch(fullText);
+        if (matchName != null) {
+          name = matchName.group(1)?.trim() ?? '';
+        }
+
+        if (nid.isEmpty && dob.isEmpty && name.isEmpty) {
+          error = 'Unable to read text';
+        }
+      } catch (e) {
+        error = 'Parsing error';
+      }
+
+      textRecognizer.close();
+    } catch (e) {
+      print('Error reading NID from image: $e');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error reading NID: $e')));
+    }
+  }
+
+  //take images
+  Future<void> _launchCamera() async {
+    final XFile? pickedFile = await _picker.pickImage(
+      source: ImageSource.camera,
+      preferredCameraDevice: CameraDevice.rear,
+    );
+
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path);
+      });
+    } else {
+      print('User cancelled or failed to take photo.');
+    }
   }
 }
