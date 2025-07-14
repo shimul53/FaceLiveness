@@ -141,6 +141,7 @@ class _HomePageState extends State<HomePage> {
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
               ),
             ),
+            SizedBox(height: 8),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.all(20),
@@ -166,7 +167,41 @@ class _HomePageState extends State<HomePage> {
                 });
               },
               child: const Text(
-                'Verify NID',
+                'Capture NID',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+              ),
+            ),
+            SizedBox(height: 8),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.all(20),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                foregroundColor: Colors.black,
+                backgroundColor: Colors.amberAccent,
+              ),
+              onPressed: () async {
+                // For picking an image
+                final XFile? image = await _picker.pickImage(
+                  source: ImageSource.gallery,
+                );
+                if (image != null) {
+                  cropImage(_imageFile!.path).then((croppedFile) {
+                    if (croppedFile != null) {
+                      setState(() {
+                        _readNIDFromImage(_imageFile!);
+                      });
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Crop cancelled')),
+                      );
+                    }
+                  });
+                }
+              },
+              child: const Text(
+                'Select NID from gallery',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
               ),
             ),
