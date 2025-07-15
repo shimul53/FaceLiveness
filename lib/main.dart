@@ -78,6 +78,8 @@ class _HomePageState extends State<HomePage> {
 
   bool isNidInfoFound = false;
   String? nidName;
+  String? nidNum;
+  String? nidDob;
 
   @override
   Widget build(BuildContext context) {
@@ -214,10 +216,45 @@ class _HomePageState extends State<HomePage> {
                   : Container(),
               isNidInfoFound
                   ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [Text("Customer Name "), Text(nidName ?? '')],
+                      Text(
+                        "Customer Information",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 12),
+                      Container(
+                        padding: EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black12,
+                              blurRadius: 6,
+                              offset: Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            InfoRow(
+                              label: "Customer Name",
+                              value: nidName ?? '',
+                            ),
+                            SizedBox(height: 8),
+                            InfoRow(label: "NID No", value: nidNum ?? ''),
+                            SizedBox(height: 8),
+                            InfoRow(
+                              label: "Date of Birth",
+                              value: nidDob ?? '',
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   )
@@ -305,47 +342,53 @@ class _HomePageState extends State<HomePage> {
       String dob = '';
       String name = '';
       String error = '';
-
       try {
-        final RegExp pNid = RegExp(r'([0-9]{3})\s([0-9]{3})\s([0-9]{4})');
-        final RegExp pNid10 = RegExp(r'\b[0-9]{10}\b');
-        final RegExp pNidOld = RegExp(r'\b[0-9]{13}\b');
-        final RegExp pNidOlder = RegExp(r'\b[0-9]{17}\b');
-        final RegExp pDob = RegExp(
-          r'\b([0-9]{2})\s([A-Z][a-z]+)\s([0-9]{4})\b',
-        );
-        final RegExp pName = RegExp(r'(?i)Name:\s*(.+)');
+        final pNid = RegExp(r'([0-9]{3})\s([0-9]{3})\s([0-9]{4})');
+        final pNid10 = RegExp(r'([0-9]{10})');
+        final pNidOld = RegExp(r'([0-9]{13})');
+        final pNidOlder = RegExp(r'([0-9]{17})');
+        final pDob = RegExp(r'([0-9]{2})\s([A-Za-z]+)\s([0-9]{4})');
+        final pName = RegExp(r'Name:\s*(.+)', caseSensitive: false);
 
-        final matchNid =
-            pNid.firstMatch(fullText) ??
-            pNid10.firstMatch(fullText) ??
-            pNidOld.firstMatch(fullText) ??
-            pNidOlder.firstMatch(fullText);
-
-        if (matchNid != null) {
-          nid = matchNid.group(0)?.replaceAll(' ', '') ?? '';
+        final m = pNid.firstMatch(fullText);
+        if (m != null) {
+          nid = m.group(0)!;
         }
 
-        final matchDob = pDob.firstMatch(fullText);
-        if (matchDob != null) {
-          dob = matchDob.group(0)?.replaceAll(' ', '-') ?? '';
+        final mOld10 = pNid10.firstMatch(fullText);
+        if (mOld10 != null) {
+          nid = mOld10.group(0)!;
         }
 
-        final matchName = pName.firstMatch(fullText);
-        if (matchName != null) {
-          name = matchName.group(1)?.trim() ?? '';
+        final mOld = pNidOld.firstMatch(fullText);
+        if (mOld != null) {
+          nid = mOld.group(0)!;
         }
 
-        if (nid.isEmpty && dob.isEmpty && name.isEmpty) {
-          error = 'Unable to read text';
+        final mOlder = pNidOlder.firstMatch(fullText);
+        if (mOlder != null) {
+          nid = mOlder.group(0)!;
         }
+
+        final mDob = pDob.firstMatch(fullText);
+        if (mDob != null) {
+          dob = mDob.group(0)!;
+        }
+
+        final mName = pName.firstMatch(fullText);
+        if (mName != null) {
+          name = mName.group(1)!;
+        }
+        print("Name : $name , NID : $nid , DOB : $dob");
       } catch (e) {
-        error = 'Parsing error';
+        print(e.toString());
       }
 
       textRecognizer.close();
       setState(() {
         nidName = name;
+        nidNum = nid;
+        nidDob = dob;
         isNidInfoFound = true;
       });
     } catch (e) {
@@ -370,5 +413,34 @@ class _HomePageState extends State<HomePage> {
     } else {
       print('User cancelled or failed to take photo.');
     }
+  }
+}
+
+class InfoRow extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const InfoRow({super.key, required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Text(
+          "$label: ",
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: Colors.grey[800],
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: TextStyle(color: Colors.black),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
   }
 }

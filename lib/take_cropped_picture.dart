@@ -41,6 +41,8 @@ class _TakeCroppedPictureState extends State<TakeCroppedPicture> {
 
     try {
       await _controller!.initialize();
+      // Add a tiny delay to smooth UI transition
+      // await Future.delayed(const Duration(milliseconds: 1000));
       setState(() {}); // Refresh the UI once initialized
     } catch (e) {
       print('Error initializing camera: $e');
@@ -61,22 +63,45 @@ class _TakeCroppedPictureState extends State<TakeCroppedPicture> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Expanded(
-          child: Stack(
+    return _controller != null && _controller!.value.isInitialized
+        ? Column(
+          children: [
+            Expanded(
+              child: Stack(
+                children: [
+                  CameraPreview(_controller!),
+
+                  CustomPaint(
+                    size: MediaQuery.of(context).size,
+                    painter: CustomPainterMain(
+                      MediaQuery.of(context).size.width,
+                    ),
+                  ), // Fullscreen preview
+                ],
+              ),
+            ),
+            ElevatedButton(
+              onPressed: _captureImage,
+              child: const Text("Capture"),
+            ),
+          ],
+        )
+        : Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              CameraPreview(_controller!),
-              CustomPaint(
-                size: MediaQuery.of(context).size,
-                painter: CustomPainterMain(MediaQuery.of(context).size.width),
-              ), // Fullscreen preview
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: CircularProgressIndicator(),
+              ),
+              Text(
+                "Initializing ...",
+                style: TextStyle(fontSize: 14, color: Colors.black),
+              ),
             ],
           ),
-        ),
-        ElevatedButton(onPressed: _captureImage, child: const Text("Capture")),
-      ],
-    );
+        );
   }
 
   Future<void> _captureImage() async {
@@ -111,7 +136,7 @@ class _TakeCroppedPictureState extends State<TakeCroppedPicture> {
     // print("Screen Height : ")
 
     // Define frame size and position
-    final frameWidth = MediaQuery.of(context).size.width + 50 ;
+    final frameWidth = MediaQuery.of(context).size.width + 50;
     final frameHeight = ((frameWidth * 2) / 3) + 20;
     final offsetX = (screenSize.width - frameWidth) ~/ 2;
     final offsetY = (screenSize.height - (frameHeight - 130)) ~/ 2;
