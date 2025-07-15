@@ -56,6 +56,9 @@ class _TakeCroppedPictureState extends State<TakeCroppedPicture> {
     super.dispose();
   }
 
+
+  
+
   @override
   Widget build(BuildContext context) {
     return Column(
