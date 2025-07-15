@@ -1,6 +1,7 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_liveness_app/take_cropped_picture.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image_cropper/image_cropper.dart';
@@ -9,6 +10,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'dart:io';
 
 import 'face_detection_page.dart';
+import 'package:image/image.dart' as img;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -71,6 +73,7 @@ class _HomePageState extends State<HomePage> {
   String? capturedImagePath;
   File? _imageFile;
   final ImagePicker _picker = ImagePicker();
+  Uint8List? returnCaptureImage;
 
   @override
   Widget build(BuildContext context) {
@@ -83,129 +86,138 @@ class _HomePageState extends State<HomePage> {
         title: const Text('Verify Your Identity'),
       ),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (capturedImagePath != null) ...[
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.file(
-                  File(capturedImagePath!),
-                  width: 200,
-                  height: 200,
-                  fit: BoxFit.cover,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (capturedImagePath != null) ...[
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.file(
+                    File(capturedImagePath!),
+                    width: 200,
+                    height: 200,
+                    fit: BoxFit.cover,
+                  ),
                 ),
+                const SizedBox(height: 20),
+              ],
+              const Text(
+                'Please click the button below to start verification',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 20),
               ),
-              const SizedBox(height: 20),
-            ],
-            const Text(
-              'Please click the button below to start verification',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 20),
-            ),
-            const SizedBox(height: 30),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.all(20),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
+              const SizedBox(height: 30),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.all(20),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  foregroundColor: Colors.black,
+                  backgroundColor: Colors.amberAccent,
                 ),
-                foregroundColor: Colors.black,
-                backgroundColor: Colors.amberAccent,
-              ),
-              onPressed: () async {
-                final cameras = await availableCameras();
-                if (cameras.isNotEmpty) {
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const FaceDetectionPage(),
-                    ),
-                  );
-                  if (result is String) {
-                    setState(() {
-                      capturedImagePath = result;
-                    });
+                onPressed: () async {
+                  final cameras = await availableCameras();
+                  if (cameras.isNotEmpty) {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const FaceDetectionPage(),
+                      ),
+                    );
+                    if (result is String) {
+                      setState(() {
+                        capturedImagePath = result;
+                      });
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Verification Successful!')),
+                      );
+                    }
+                  } else {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Verification Successful!')),
+                      const SnackBar(content: Text('Camera not active!')),
                     );
                   }
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Camera not active!')),
+                },
+                child: const Text(
+                  'Verify Now',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                ),
+              ),
+              SizedBox(height: 8),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.all(20),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  foregroundColor: Colors.black,
+                  backgroundColor: Colors.amberAccent,
+                ),
+                onPressed: () async {
+                  // _launchCamera().then((Value) {
+                  //   cropImage(_imageFile!.path).then((croppedFile) {
+                  //     if (croppedFile != null) {
+                  //       setState(() {
+                  //         _readNIDFromImage(_imageFile!);
+                  //       });
+                  //     } else {
+                  //       ScaffoldMessenger.of(context).showSnackBar(
+                  //         const SnackBar(content: Text('Crop cancelled')),
+                  //       );
+                  //     }
+                  //   });
+                  // });
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => TakeCroppedPicture()),
+                  ).then((returnImage) {
+                    setState(() {
+                      returnCaptureImage = Uint8List.fromList(
+                        img.encodeJpg(returnImage!),
+                      );
+                    });
+                  });
+                },
+                child: const Text(
+                  'Capture NID',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                ),
+              ),
+              returnCaptureImage != null
+                  ? Image.memory(returnCaptureImage!)
+                  : Container(),
+              SizedBox(height: 8),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.all(20),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  foregroundColor: Colors.black,
+                  backgroundColor: Colors.amberAccent,
+                ),
+                onPressed: () async {
+                  // For picking an image
+                  final XFile? image = await _picker.pickImage(
+                    source: ImageSource.gallery,
                   );
-                }
-              },
-              child: const Text(
-                'Verify Now',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-              ),
-            ),
-            SizedBox(height: 8),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.all(20),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                foregroundColor: Colors.black,
-                backgroundColor: Colors.amberAccent,
-              ),
-              onPressed: () async {
-                _launchCamera().then((Value) {
-                  cropImage(_imageFile!.path).then((croppedFile) {
-                    if (croppedFile != null) {
+                  if (image != null) {
+                    cropImage(image.path).then((croppedFile) {
                       setState(() {
-                        _readNIDFromImage(_imageFile!);
+                        _readNIDFromImage(croppedFile!);
                       });
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Crop cancelled')),
-                      );
-                    }
-                  });
-                });
-              },
-              child: const Text(
-                'Capture NID',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-              ),
-            ),
-            SizedBox(height: 8),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.all(20),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
+                    });
+                  }
+                },
+                child: const Text(
+                  'Select NID from gallery',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
                 ),
-                foregroundColor: Colors.black,
-                backgroundColor: Colors.amberAccent,
               ),
-              onPressed: () async {
-                // For picking an image
-                final XFile? image = await _picker.pickImage(
-                  source: ImageSource.gallery,
-                );
-                if (image != null) {
-                  cropImage(_imageFile!.path).then((croppedFile) {
-                    if (croppedFile != null) {
-                      setState(() {
-                        _readNIDFromImage(_imageFile!);
-                      });
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Crop cancelled')),
-                      );
-                    }
-                  });
-                }
-              },
-              child: const Text(
-                'Select NID from gallery',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -215,16 +227,22 @@ class _HomePageState extends State<HomePage> {
   Future<File?> cropImage(String filePath) async {
     final croppedFile = await ImageCropper().cropImage(
       sourcePath: filePath,
-      aspectRatio: CropAspectRatio(ratioX: 30, ratioY: 30),
+      //aspectRatio: CropAspectRatio(ratioX: 30, ratioY: 30),
       uiSettings: [
         AndroidUiSettings(
-          toolbarTitle: 'Crop NID Image',
-          toolbarColor: Colors.deepOrange,
-          toolbarWidgetColor: Colors.white,
-          initAspectRatio: CropAspectRatioPreset.original,
-          lockAspectRatio: false,
+          toolbarTitle: 'Crop Image',
+          toolbarColor: Colors.amberAccent,
+          toolbarWidgetColor: Colors.amber,
+          initAspectRatio: CropAspectRatioPreset.square,
+          lockAspectRatio: true,
+          hideBottomControls: true,
         ),
-        IOSUiSettings(title: 'Crop NID Image'),
+        IOSUiSettings(
+          title: 'Crop Image',
+          aspectRatioLockDimensionSwapEnabled: true,
+          aspectRatioLockEnabled: true, // iOS-specific lock
+          resetAspectRatioEnabled: false, // Disable reset to original
+        ),
       ],
     );
 
