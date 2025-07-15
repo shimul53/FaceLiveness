@@ -8,7 +8,9 @@ import 'dart:typed_data';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_liveness_app/custom_painter.dart';
 import 'package:image/image.dart' as img;
+import 'package:tuple/tuple.dart';
 
 class TakeCroppedPicture extends StatefulWidget {
   TakeCroppedPicture({super.key});
@@ -50,14 +52,12 @@ class _TakeCroppedPictureState extends State<TakeCroppedPicture> {
     super.initState();
     _initializeCamera();
   }
+
   @override
   void dispose() {
     _controller!.dispose();
     super.dispose();
   }
-
-
-  
 
   @override
   Widget build(BuildContext context) {
@@ -66,17 +66,11 @@ class _TakeCroppedPictureState extends State<TakeCroppedPicture> {
         Expanded(
           child: Stack(
             children: [
-              CameraPreview(_controller!), // Fullscreen preview
-              Center(
-                child: Container(
-                  width: 300,
-                  height: 200,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.white, width: 2),
-                    color: Colors.transparent,
-                  ),
-                ),
-              ),
+              CameraPreview(_controller!),
+              CustomPaint(
+                size: MediaQuery.of(context).size,
+                painter: CustomPainterMain(MediaQuery.of(context).size.width),
+              ), // Fullscreen preview
             ],
           ),
         ),
@@ -117,19 +111,27 @@ class _TakeCroppedPictureState extends State<TakeCroppedPicture> {
     // print("Screen Height : ")
 
     // Define frame size and position
-    final frameWidth = 300;
-    final frameHeight = 200;
+    final frameWidth = MediaQuery.of(context).size.width + 50 ;
+    final frameHeight = ((frameWidth * 2) / 3) + 20;
     final offsetX = (screenSize.width - frameWidth) ~/ 2;
-    final offsetY = (screenSize.height - frameHeight) ~/ 2;
+    final offsetY = (screenSize.height - (frameHeight - 130)) ~/ 2;
+
+    print("offsetX: $offsetX offsetY : $offsetY");
 
     // Scale from screen size to actual image size
     final scaleX = capturedImage!.width / screenSize.width;
     final scaleY = capturedImage.height / screenSize.height;
 
+    print("scaleX : $scaleX , scaleY : $scaleY");
+
     final cropX = (offsetX * scaleX).toInt();
     final cropY = (offsetY * scaleY).toInt();
     final cropWidth = (frameWidth * scaleX).toInt();
     final cropHeight = (frameHeight * scaleY).toInt();
+
+    print(
+      "cropX : $cropX , cropY : $cropY , cropWidth : $cropWidth , cropHeight : $cropHeight",
+    );
 
     final cropped = img.copyCrop(
       capturedImage,
@@ -139,6 +141,6 @@ class _TakeCroppedPictureState extends State<TakeCroppedPicture> {
       height: cropHeight,
     );
 
-    Navigator.pop(context, cropped);
+    Navigator.pop(context, Tuple2(cropped, imageFile.path));
   }
 }

@@ -7,6 +7,7 @@ import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:tuple/tuple.dart';
 import 'dart:io';
 
 import 'face_detection_page.dart';
@@ -75,6 +76,9 @@ class _HomePageState extends State<HomePage> {
   final ImagePicker _picker = ImagePicker();
   Uint8List? returnCaptureImage;
 
+  bool isNidInfoFound = false;
+  String? nidName;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -131,7 +135,9 @@ class _HomePageState extends State<HomePage> {
                         capturedImagePath = result;
                       });
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Verification Successful!')),
+                        const SnackBar(
+                          content: Text('Verification Successful!'),
+                        ),
                       );
                     }
                   } else {
@@ -171,12 +177,15 @@ class _HomePageState extends State<HomePage> {
                   // });
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => TakeCroppedPicture()),
+                    MaterialPageRoute(
+                      builder: (context) => TakeCroppedPicture(),
+                    ),
                   ).then((returnImage) {
                     setState(() {
                       returnCaptureImage = Uint8List.fromList(
-                        img.encodeJpg(returnImage!),
+                        img.encodeJpg((returnImage as Tuple2).item1),
                       );
+                      _readNIDFromImage(returnImage.item2);
                     });
                   });
                 },
@@ -186,7 +195,32 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
               returnCaptureImage != null
-                  ? Image.memory(returnCaptureImage!)
+                  ? Container(
+                    margin: EdgeInsets.all(8.0),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.blueGrey),
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8.0),
+                      child: Image.memory(
+                        width: double.infinity,
+                        height: 300,
+                        fit: BoxFit.cover,
+                        returnCaptureImage!,
+                      ),
+                    ),
+                  )
+                  : Container(),
+              isNidInfoFound
+                  ? Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [Text("Customer Name "), Text(nidName ?? '')],
+                      ),
+                    ],
+                  )
                   : Container(),
               SizedBox(height: 8),
               ElevatedButton(
@@ -206,7 +240,7 @@ class _HomePageState extends State<HomePage> {
                   if (image != null) {
                     cropImage(image.path).then((croppedFile) {
                       setState(() {
-                        _readNIDFromImage(croppedFile!);
+                        _readNIDFromImage(croppedFile!.path);
                       });
                     });
                   }
@@ -254,9 +288,9 @@ class _HomePageState extends State<HomePage> {
   }
 
   //Read NID Info
-  Future<void> _readNIDFromImage(File imageFile) async {
+  Future<void> _readNIDFromImage(String imageFile) async {
     try {
-      final InputImage inputImage = InputImage.fromFile(imageFile);
+      final InputImage inputImage = InputImage.fromFilePath(imageFile);
       final textRecognizer = TextRecognizer(
         script: TextRecognitionScript.latin,
       );
@@ -310,6 +344,10 @@ class _HomePageState extends State<HomePage> {
       }
 
       textRecognizer.close();
+      setState(() {
+        nidName = name;
+        isNidInfoFound = true;
+      });
     } catch (e) {
       print('Error reading NID from image: $e');
       ScaffoldMessenger.of(
