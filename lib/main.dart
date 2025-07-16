@@ -1,6 +1,7 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_liveness_app/nid_capture_screen.dart';
 import 'package:flutter_liveness_app/take_cropped_picture.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
@@ -108,12 +109,7 @@ class _HomePageState extends State<HomePage> {
                 ),
                 const SizedBox(height: 20),
               ],
-              const Text(
-                'Please click the button below to start verification',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 20),
-              ),
-              const SizedBox(height: 30),
+
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.all(20),
@@ -153,7 +149,7 @@ class _HomePageState extends State<HomePage> {
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
                 ),
               ),
-              SizedBox(height: 8),
+              SizedBox(height: 20),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.all(20),
@@ -177,89 +173,171 @@ class _HomePageState extends State<HomePage> {
                   //     }
                   //   });
                   // });
+                  // Navigator.push(
+                  //   context,
+                  //   MaterialPageRoute(
+                  //     builder: (context) => TakeCroppedPicture(),
+                  //   ),
+                  // ).then((returnImage) {
+                  //   setState(() {
+                  //     returnCaptureImage = Uint8List.fromList(
+                  //       img.encodeJpg((returnImage as Tuple2).item1),
+                  //     );
+                  //     _readNIDFromImage(returnImage.item2);
+                  //   });
+                  // });
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => TakeCroppedPicture(),
-                    ),
-                  ).then((returnImage) {
-                    setState(() {
-                      returnCaptureImage = Uint8List.fromList(
-                        img.encodeJpg((returnImage as Tuple2).item1),
-                      );
-                      _readNIDFromImage(returnImage.item2);
-                    });
-                  });
+                    MaterialPageRoute(builder: (context) => NidCaptureScreen()),
+                  );
                 },
                 child: const Text(
                   'Capture NID',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
                 ),
               ),
-              returnCaptureImage != null
-                  ? Container(
-                    margin: EdgeInsets.all(8.0),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.blueGrey),
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8.0),
-                      child: Image.memory(
-                        width: double.infinity,
-                        height: 300,
-                        fit: BoxFit.cover,
-                        returnCaptureImage!,
-                      ),
-                    ),
-                  )
-                  : Container(),
-              isNidInfoFound
-                  ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Customer Information",
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 12),
-                      Container(
-                        padding: EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[100],
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black12,
-                              blurRadius: 6,
-                              offset: Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            InfoRow(
-                              label: "Customer Name",
-                              value: nidName ?? '',
-                            ),
-                            SizedBox(height: 8),
-                            InfoRow(label: "NID No", value: nidNum ?? ''),
-                            SizedBox(height: 8),
-                            InfoRow(
-                              label: "Date of Birth",
-                              value: nidDob ?? '',
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  )
-                  : Container(),
-              SizedBox(height: 8),
+
+              // returnCaptureImage != null
+              //     ? GestureDetector(
+              //       onTap: () {
+              //         Navigator.push(
+              //           context,
+              //           MaterialPageRoute(
+              //             builder: (context) => TakeCroppedPicture(),
+              //           ),
+              //         ).then((returnImage) {
+              //           setState(() {
+              //             returnCaptureImage = Uint8List.fromList(
+              //               img.encodeJpg((returnImage as Tuple2).item1),
+              //             );
+              //             _readNIDFromImage(returnImage.item2);
+              //           });
+              //         });
+              //       },
+              //       child: Container(
+              //         margin: EdgeInsets.all(8.0),
+              //         decoration: BoxDecoration(
+              //           border: Border.all(color: Colors.blueGrey),
+              //           borderRadius: BorderRadius.circular(8.0),
+              //         ),
+              //         child: ClipRRect(
+              //           borderRadius: BorderRadius.circular(8.0),
+              //           child: Image.memory(
+              //             width: double.infinity,
+              //             height: 300,
+              //             fit: BoxFit.cover,
+              //             returnCaptureImage!,
+              //           ),
+              //         ),
+              //       ),
+              //     )
+              //     : GestureDetector(
+              //       onTap: () {
+              //         Navigator.push(
+              //           context,
+              //           MaterialPageRoute(
+              //             builder: (context) => TakeCroppedPicture(),
+              //           ),
+              //         ).then((returnImage) {
+              //           setState(() {
+              //             returnCaptureImage = Uint8List.fromList(
+              //               img.encodeJpg((returnImage as Tuple2).item1),
+              //             );
+              //             _readNIDFromImage(returnImage.item2);
+              //           });
+              //         });
+              //       },
+              //       child: Container(
+              //         margin: const EdgeInsets.all(8.0),
+              //         decoration: BoxDecoration(
+              //           border: Border.all(color: Colors.blueGrey),
+              //           borderRadius: BorderRadius.circular(8.0),
+              //         ),
+              //         child: ClipRRect(
+              //           borderRadius: BorderRadius.circular(8.0),
+              //           child:
+              //               returnCaptureImage != null
+              //                   ? Image.memory(
+              //                     returnCaptureImage!,
+              //                     width: double.infinity,
+              //                     height: 300,
+              //                     fit: BoxFit.cover,
+              //                   )
+              //                   : Container(
+              //                     width: double.infinity,
+              //                     height: 300,
+              //                     color: Colors.grey[300],
+              //                     alignment: Alignment.center,
+              //                     child: Column(
+              //                       mainAxisAlignment: MainAxisAlignment.center,
+              //                       children: const [
+              //                         Icon(
+              //                           Icons.camera_alt,
+              //                           size: 60,
+              //                           color: Colors.grey,
+              //                         ),
+              //                         SizedBox(height: 8),
+              //                         Text(
+              //                           'Tap to Capture NID',
+              //                           style: TextStyle(
+              //                             fontSize: 16,
+              //                             color: Colors.black54,
+              //                             fontWeight: FontWeight.w500,
+              //                           ),
+              //                         ),
+              //                       ],
+              //                     ),
+              //                   ),
+              //         ),
+              //       ),
+              //     ),
+
+              // isNidInfoFound
+              //     ? Column(
+              //       crossAxisAlignment: CrossAxisAlignment.start,
+              //       children: [
+              //         Text(
+              //           "Customer Information",
+              //           style: TextStyle(
+              //             fontSize: 18,
+              //             fontWeight: FontWeight.bold,
+              //           ),
+              //         ),
+              //         SizedBox(height: 12),
+              //         Container(
+              //           padding: EdgeInsets.all(16),
+              //           decoration: BoxDecoration(
+              //             color: Colors.grey[100],
+              //             borderRadius: BorderRadius.circular(12),
+              //             boxShadow: [
+              //               BoxShadow(
+              //                 color: Colors.black12,
+              //                 blurRadius: 6,
+              //                 offset: Offset(0, 2),
+              //               ),
+              //             ],
+              //           ),
+              //           child: Column(
+              //             crossAxisAlignment: CrossAxisAlignment.start,
+              //             children: [
+              //               InfoRow(
+              //                 label: "Customer Name",
+              //                 value: nidName ?? '',
+              //               ),
+              //               SizedBox(height: 8),
+              //               InfoRow(label: "NID No", value: nidNum ?? ''),
+              //               SizedBox(height: 8),
+              //               InfoRow(
+              //                 label: "Date of Birth",
+              //                 value: nidDob ?? '',
+              //               ),
+              //             ],
+              //           ),
+              //         ),
+              //       ],
+              //     )
+              //     : Container(),
+              SizedBox(height: 20),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.all(20),
