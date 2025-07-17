@@ -44,11 +44,33 @@ class _FaceDetectionPageState extends State<FaceDetectionPage> {
   double? rightEyeOpenProbability;
   double? headEulerAngleY;
 
+  final List<List<Color>> actionGradients = [
+    [Colors.blue.shade700, Colors.lightBlueAccent],
+    [Colors.orange.shade700, Colors.orangeAccent],
+    [Colors.teal.shade700, Colors.tealAccent],
+    [Colors.teal.shade700, Colors.tealAccent],
+  ];
+
+  int gradientIndex = 0;
+
   @override
   void initState() {
     super.initState();
-    allActions.shuffle();
-    challengeActions = allActions.take(2).toList();
+
+    // Custom logic to pick 2 random from ['lookRight', 'lookLeft']
+    final List<String> directionalActions = ['lookRight', 'lookLeft'];
+    directionalActions.shuffle();
+    final List<String> selectedDirectionals =
+        directionalActions.take(2).toList();
+
+    // Pick 1 random from ['smile', 'blink']
+    final List<String> expressionActions = ['smile', 'blink'];
+    expressionActions.shuffle();
+    final String selectedExpression = expressionActions.first;
+
+    // Combine them into the final challenge list
+    challengeActions = [...selectedDirectionals, selectedExpression];
+
     initializeCamera();
   }
 
@@ -107,7 +129,7 @@ class _FaceDetectionPageState extends State<FaceDetectionPage> {
         ),
       );
 
-       //android end
+      //android end
 
       //ios start
 
@@ -189,6 +211,9 @@ class _FaceDetectionPageState extends State<FaceDetectionPage> {
 
     if (actionCompleted) {
       currentActionIndex++;
+      setState(() {
+        gradientIndex = (gradientIndex + 1) % actionGradients.length;
+      });
       if (currentActionIndex >= challengeActions.length) {
         currentActionIndex = 0;
         final imagePath = await captureImage();
@@ -241,15 +266,35 @@ class _FaceDetectionPageState extends State<FaceDetectionPage> {
                     left: 16,
                     right: 16,
                     child: Container(
-                      padding: const EdgeInsets.all(8),
-                      color: Colors.black54,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: actionGradients[gradientIndex],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 8,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
+                      ),
+
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           Text(
                             'Please ${getActionDescription(challengeActions[currentActionIndex])}',
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 18,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -257,7 +302,7 @@ class _FaceDetectionPageState extends State<FaceDetectionPage> {
                           Text(
                             'Step ${currentActionIndex + 1} of ${challengeActions.length}',
                             style: const TextStyle(
-                              color: Colors.white,
+                              color: Colors.white70,
                               fontSize: 16,
                             ),
                             textAlign: TextAlign.center,
@@ -266,31 +311,32 @@ class _FaceDetectionPageState extends State<FaceDetectionPage> {
                       ),
                     ),
                   ),
-                  Positioned(
-                    bottom: 16,
-                    left: 16,
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      color: Colors.black54,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Smile: ${smilingProbability != null ? (smilingProbability! * 100).toStringAsFixed(2) : 'N/A'}%',
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                          Text(
-                            'Blink: ${leftEyeOpenProbability != null && rightEyeOpenProbability != null ? (((leftEyeOpenProbability! + rightEyeOpenProbability!) / 2) * 100).toStringAsFixed(2) : 'N/A'}%',
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                          Text(
-                            'Look: ${headEulerAngleY != null ? headEulerAngleY!.toStringAsFixed(2) : 'N/A'}°',
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+
+                  // Positioned(
+                  //   bottom: 16,
+                  //   left: 16,
+                  //   child: Container(
+                  //     padding: const EdgeInsets.all(8),
+                  //     color: Colors.black54,
+                  //     child: Column(
+                  //       crossAxisAlignment: CrossAxisAlignment.start,
+                  //       children: [
+                  //         Text(
+                  //           'Smile: ${smilingProbability != null ? (smilingProbability! * 100).toStringAsFixed(2) : 'N/A'}%',
+                  //           style: const TextStyle(color: Colors.white),
+                  //         ),
+                  //         Text(
+                  //           'Blink: ${leftEyeOpenProbability != null && rightEyeOpenProbability != null ? (((leftEyeOpenProbability! + rightEyeOpenProbability!) / 2) * 100).toStringAsFixed(2) : 'N/A'}%',
+                  //           style: const TextStyle(color: Colors.white),
+                  //         ),
+                  //         Text(
+                  //           'Look: ${headEulerAngleY != null ? headEulerAngleY!.toStringAsFixed(2) : 'N/A'}°',
+                  //           style: const TextStyle(color: Colors.white),
+                  //         ),
+                  //       ],
+                  //     ),
+                  //   ),
+                  // ),
                 ],
               )
               : const Center(child: CircularProgressIndicator()),

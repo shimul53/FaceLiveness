@@ -76,6 +76,7 @@ class _HomePageState extends State<HomePage> {
   File? _imageFile;
   final ImagePicker _picker = ImagePicker();
   Uint8List? returnCaptureImage;
+  var img1 = Image.asset('assets/portrait.png');
 
   bool isNidInfoFound = false;
   String? nidName;
@@ -97,18 +98,44 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (capturedImagePath != null) ...[
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.file(
-                    File(capturedImagePath!),
-                    width: 200,
-                    height: 200,
-                    fit: BoxFit.cover,
+              capturedImagePath != null
+                  ? Center(
+                    child: Container(
+                      margin: EdgeInsets.all(8.0),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.blueGrey),
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8.0),
+                        child: Image.file(
+                          width: double.infinity,
+                          height: 400,
+                          fit: BoxFit.cover,
+                          File(capturedImagePath!),
+                        ),
+                      ),
+                    ),
+                  )
+                  : GestureDetector(
+                    onTap: () {
+                      // Your action here (e.g., open camera or picker)
+                      print("Placeholder image clicked");
+                    },
+                    child: Center(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey),
+                        ),
+                        width: double.infinity,
+                        height: 400,
+                        child: ClipRRect(
+                          child: Image(image: img1.image, fit: BoxFit.cover),
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 20),
-              ],
+              const SizedBox(height: 20),
 
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
@@ -383,8 +410,8 @@ class _HomePageState extends State<HomePage> {
           toolbarColor: Colors.amberAccent,
           toolbarWidgetColor: Colors.amber,
           initAspectRatio: CropAspectRatioPreset.square,
-          lockAspectRatio: true,
-          hideBottomControls: true,
+          lockAspectRatio: false,
+          hideBottomControls: false,
         ),
         IOSUiSettings(
           title: 'Crop Image',

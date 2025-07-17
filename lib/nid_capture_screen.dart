@@ -169,7 +169,6 @@ class _NidCapturePageState extends State<NidCaptureScreen> {
                       ),
                     ),
                   )
-                  
                   : GestureDetector(
                     onTap: () async {
                       showDialog(
@@ -620,8 +619,8 @@ class _NidCapturePageState extends State<NidCaptureScreen> {
           toolbarColor: Colors.amberAccent,
           toolbarWidgetColor: Colors.amber,
           initAspectRatio: CropAspectRatioPreset.square,
-          lockAspectRatio: true,
-          hideBottomControls: true,
+          lockAspectRatio: false,
+          hideBottomControls: false,
         ),
         IOSUiSettings(
           title: 'Crop Image',
